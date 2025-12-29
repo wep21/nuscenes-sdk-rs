@@ -4,11 +4,14 @@ This crate provides a PyO3-based drop-in for the most common nuScenes SDK data a
 
 ## Build
 
-Use [maturin](https://github.com/PyO3/maturin) to build or install the extension:
-
 ```bash
-cd rust/nuscenes-rs
-maturin develop --release
+uv sync
+```
+
+## How to use
+
+```python
+from nuscenes_rs import NuScenes
 ```
 
 This will produce the `nuscenes_rs` extension module that can be imported from Python.

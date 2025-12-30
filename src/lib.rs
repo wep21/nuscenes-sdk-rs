@@ -1,7 +1,6 @@
 use pyo3::conversion::IntoPyObject;
 use pyo3::exceptions::{PyAttributeError, PyKeyError, PyValueError};
 use pyo3::prelude::*;
-use pyo3::sync::PyOnceLock;
 use pyo3::types::{PyBool, PyDict, PyFloat, PyInt, PyList, PyModule, PyString, PyTuple};
 use pyo3::{Bound, Py};
 use rayon::prelude::*;
@@ -18,7 +17,7 @@ pub struct NuScenes {
     verbose: bool,
     map_resolution: f64,
     table_names: Vec<String>,
-    colormap: PyOnceLock<Py<PyAny>>,
+    colormap: Py<PyAny>,
     tables: HashMap<String, Vec<Value>>,
     py_tables: HashMap<String, Py<PyAny>>,
     token2ind: HashMap<String, HashMap<String, usize>>,
@@ -110,13 +109,11 @@ impl NuScenes {
 
         let py_tables = to_py_tables(py, &tables)?;
 
-        let colormap_cell = PyOnceLock::new();
-        let initial_cmap = if let Some(c) = colormap {
+        let colormap = if let Some(c) = colormap {
             c
         } else {
             build_colormap(py, &tables)?
         };
-        let _ = colormap_cell.set(py, initial_cmap.clone_ref(py));
 
         if verbose {
             for name in &table_names {
@@ -132,7 +129,7 @@ impl NuScenes {
             verbose,
             map_resolution,
             table_names,
-            colormap: colormap_cell,
+            colormap,
             tables,
             py_tables,
             token2ind,
@@ -168,10 +165,7 @@ impl NuScenes {
 
     #[getter]
     fn colormap(&self, py: Python<'_>) -> PyResult<Py<PyAny>> {
-        let cmap = self
-            .colormap
-            .get_or_try_init(py, || build_colormap(py, &self.tables))?;
-        Ok(cmap.clone_ref(py))
+        Ok(self.colormap.clone_ref(py))
     }
 
     #[getter]
